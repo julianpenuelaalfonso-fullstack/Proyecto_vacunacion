@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cobertura de Vacunación Bogotá</title>
+<script>/*__CHARTJS__*/</script><!-- Chart.js 4.4.1 embebido por etl.py: el tablero funciona sin CDN -->
+<style>
+:root{color-scheme:light;--page:#f9f9f7;--surface:#fcfcfb;--ink:#0b0b0b;--ink2:#52514e;--muted:#898781;--grid:#e1e0d9;--axis:#c3c2b7;--border:rgba(11,11,11,.10);
+--s1:#2a78d6;--s2:#eb6834;--s3:#1baf7a;--s4:#eda100;--s5:#e87ba4;--good:#0ca30c;--crit:#d03b3b;--goodtxt:#006300}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--page:#0d0d0d;--surface:#1a1a19;--ink:#f0efec;--ink2:#c3c2b7;--grid:#2c2c2a;--axis:#383835;--border:rgba(255,255,255,.10);
+--s1:#3987e5;--s2:#d95926;--s3:#199e70;--s4:#c98500;--s5:#d55181;--goodtxt:#0ca30c;--crit:#e66767}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--page);color:var(--ink);font:14px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+header{padding:24px 16px 8px;max-width:1200px;margin:auto}
+h1{margin:0;font-size:22px}
+header p{margin:4px 0 0;color:var(--ink2)}
+main{max-width:1200px;margin:auto;padding:8px 16px 32px;display:grid;gap:16px;grid-template-columns:repeat(12,1fr)}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px;min-width:0}
+.card h2{margin:0 0 2px;font-size:15px}
+.card .sub{margin:0 0 12px;color:var(--ink2);font-size:12.5px}
+.kpi{grid-column:span 3}
+.kpi .v{font-size:30px;font-weight:600;margin-top:4px}
+.kpi .l{color:var(--ink2);font-size:12.5px}
+.kpi .st{font-size:12px;margin-top:4px;color:var(--ink2)}
+.bad::before{content:"▲ ";color:var(--crit)} .ok::before{content:"✔ ";color:var(--goodtxt)}
+.w12{grid-column:span 12}.w8{grid-column:span 8}.w6{grid-column:span 6}.w4{grid-column:span 4}
+.chart{position:relative;height:320px}.tall{height:520px}
+table{border-collapse:collapse;width:100%;font-size:12px;font-variant-numeric:tabular-nums}
+th,td{padding:4px 6px;border-bottom:1px solid var(--grid);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+.scroll{overflow-x:auto}
+footer{max-width:1200px;margin:auto;padding:0 16px 24px;color:var(--muted);font-size:12px}
+@media (max-width:900px){.kpi{grid-column:span 6}.w8,.w6,.w4{grid-column:span 12}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Cobertura de vacunación · Bogotá D.C.</h1>
+  <p id="meta-info"></p>
+</header>
+<main>
+  <div class="card kpi"><div class="l">Cobertura primera infancia (sectores)</div><div class="v" id="k1"></div><div class="st" id="k1s"></div></div>
+  <div class="card kpi"><div class="l">Caída triple viral 1 año → refuerzo 5 años</div><div class="v" id="k2"></div><div class="st" id="k2s"></div></div>
+  <div class="card kpi"><div class="l">Localidades bajo la meta (primera infancia)</div><div class="v" id="k3"></div><div class="st" id="k3s"></div></div>
+  <div class="card kpi"><div class="l">Dosis faltantes para llegar al 95 %</div><div class="v" id="k4"></div><div class="st" id="k4s"></div></div>
+
+  <section class="card w8"><h2>Cobertura anual por biológico</h2><p class="sub">Distrito, años cerrados. Línea punteada = meta PAI 95 %.</p><div class="chart"><canvas id="cAnual"></canvas></div></section>
+  <section class="card w4"><h2 id="tActual"></h2><p class="sub">Cobertura acumulada mes a mes. Diagonal = ritmo necesario para cerrar el año en 95 %.</p><div class="chart"><canvas id="cActual"></canvas></div></section>
+
+  <section class="card w6"><h2>Primera infancia por localidad</h2><p class="sub">Pentavalente, triple viral y refuerzos en colegios, ICBF e integración. Línea roja punteada = meta 95 %.</p><div class="chart tall"><canvas id="cLoc"></canvas></div></section>
+  <section class="card w6"><h2>Cobertura por sector institucional</h2><p class="sub">Todas las edades y biológicos del seguimiento.</p><div class="chart"><canvas id="cInst"></canvas></div>
+    <h2 style="margin-top:16px">Cobertura por grupo de biológico</h2><p class="sub">Dónde está el mayor rezago del esquema.</p><div class="chart" style="height:170px"><canvas id="cGrupo"></canvas></div></section>
+
+  <section class="card w12"><h2>Mapa de calor: localidad × sector</h2><p class="sub">Cobertura (%) = dosis aplicadas / denominador. Más oscuro = mayor cobertura; negrita = cumple la meta.</p><div class="scroll" id="heat"></div></section>
+  <section class="card w12"><h2>Trazabilidad de la limpieza</h2><p class="sub">Registros afectados en cada paso del ETL en la última ejecución.</p><div class="scroll" id="log"></div></section>
+</main>
+<footer>Fuente: Portal de Datos Abiertos de Bogotá – Secretaría Distrital de Salud / Observatorio de Salud de Bogotá (SaluData), vía API CKAN. Licencia CC BY 4.0.</footer>
+<script>
+const D = /*__DATOS__*/null;
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const S = ['--s1','--s2','--s3','--s4','--s5'].map(css), K = D.kpis, META = D.meta;
+const fmt = n => n.toLocaleString('es-CO');
+Chart.defaults.font.family = 'system-ui,-apple-system,"Segoe UI",sans-serif';
+Chart.defaults.color = css('--ink2');
+Chart.defaults.borderColor = css('--grid');
+Chart.defaults.plugins.tooltip.callbacks.label = c => ` ${c.dataset.label ? c.dataset.label + ': ' : ''}${fmt(c.parsed.y ?? c.parsed.x)} %`;
+
+// línea de meta horizontal o vertical, dibujada sobre la grilla
+const metaLine = {id:'meta', afterDatasetsDraw(ch, a, o){ if(!o.on) return; const {ctx, chartArea:A, scales} = ch;
+  const ax = o.axis === 'x' ? scales.x : scales.y, p = ax.getPixelForValue(META); ctx.save(); ctx.strokeStyle = css('--crit'); ctx.setLineDash([5,4]); ctx.lineWidth = 1.5;
+  ctx.beginPath(); o.axis === 'x' ? (ctx.moveTo(p, A.top), ctx.lineTo(p, A.bottom)) : (ctx.moveTo(A.left, p), ctx.lineTo(A.right, p)); ctx.stroke(); ctx.restore(); }};
+Chart.register(metaLine);
+
+document.getElementById('meta-info').textContent = `Actualizado ${D.generado} desde la API de Datos Abiertos Bogotá · corte sectores ${K.fecha_corte_sectores} · meta PAI ${META} %`;
+const set = (id, v, s, ok) => { document.getElementById(id).textContent = v; const e = document.getElementById(id + 's'); e.textContent = s; e.className = 'st ' + (ok ? 'ok' : 'bad'); };
+set('k1', K.cobertura_primera_infancia_sectores + ' %', `${(META - K.cobertura_primera_infancia_sectores).toFixed(1)} pts bajo la meta`, K.cobertura_primera_infancia_sectores >= META);
+set('k2', K.caida_esquema_1a5 + ' pts', `${K.tv_1anio_ult} % → ${K.tv_5anios_ult} % (${K.ultimo_anio_cerrado})`, K.caida_esquema_1a5 <= 0);
+set('k3', `${K.localidades_bajo_meta_infancia} de 20`, `Menor: ${K.localidad_menor_cobertura} (${K.localidad_menor_cobertura_valor} %)`, K.localidades_bajo_meta_infancia === 0);
+set('k4', fmt(K.dosis_faltantes_meta_infancia), 'en primera infancia, población de los sectores', K.dosis_faltantes_meta_infancia === 0);
+
+// 1. Serie anual (años cerrados)
+const cerr = D.anual.filter(r => r.anio_completo), bios = [...new Set(cerr.map(r => r.biologico))];
+const anios = [...new Set(cerr.map(r => r.anio))].sort();
+new Chart(cAnual, {type:'line', data:{labels:anios, datasets:bios.map((b,i) => ({label:b, borderColor:S[i], backgroundColor:S[i], borderWidth:2, pointRadius:4, pointHoverRadius:6,
+  data:anios.map(y => (cerr.find(r => r.biologico === b && r.anio === y) || {}).cobertura ?? null)}))},
+  options:{maintainAspectRatio:false, interaction:{mode:'index', intersect:false}, scales:{y:{suggestedMin:60, suggestedMax:100, ticks:{callback:v => v + ' %'}}},
+    plugins:{meta:{on:true}, legend:{position:'bottom', labels:{boxWidth:12, usePointStyle:true}}}}});
+
+// 2. Año en curso: acumulado vs ritmo necesario
+document.getElementById('tActual').textContent = `Avance ${D.anio_actual}`;
+const bm = [...new Set(D.mensual_actual.map(r => r.biologico))], meses = [1,2,3,4,5,6,7,8,9,10,11,12];
+new Chart(cActual, {type:'line', data:{labels:['E','F','M','A','M','J','J','A','S','O','N','D'], datasets:[
+  ...bm.map(b => { const i = bios.indexOf(b); return {label:b, borderColor:S[i < 0 ? 4 : i], backgroundColor:S[i < 0 ? 4 : i], borderWidth:2, pointRadius:2,
+    data:meses.map(m => (D.mensual_actual.find(r => r.biologico === b && r.mes_num === m) || {}).cobertura_acum ?? null)}; }),
+  {label:'Ritmo para 95 %', data:meses.map(m => +(META * m / 12).toFixed(1)), borderColor:css('--muted'), borderDash:[4,4], borderWidth:1.5, pointRadius:0}]},
+  options:{maintainAspectRatio:false, interaction:{mode:'index', intersect:false}, scales:{y:{min:0, max:100, ticks:{callback:v => v + ' %'}}},
+    plugins:{legend:{display:false}}}});
+
+// 3. Localidades
+new Chart(cLoc, {type:'bar', data:{labels:D.loc_infancia.map(r => r.localidad), datasets:[{data:D.loc_infancia.map(r => r.cobertura),
+  backgroundColor:S[0], borderRadius:4, barPercentage:.8}]},
+  options:{indexAxis:'y', maintainAspectRatio:false, scales:{x:{min:0, max:100, ticks:{callback:v => v + ' %'}}, y:{grid:{display:false}}},
+    plugins:{meta:{on:true, axis:'x'}, legend:{display:false}, tooltip:{callbacks:{label:c => { const r = D.loc_infancia[c.dataIndex];
+      return ` ${r.cobertura} % · ${fmt(r.dosis_aplicada)} de ${fmt(r.denominador)} niños (${r.zona})`; }}}}}});
+
+// 4-5. Sector institucional y grupo de biológico
+const hbar = (el, rows, key) => new Chart(el, {type:'bar', data:{labels:rows.map(r => r[key]), datasets:[{data:rows.map(r => r.cobertura),
+  backgroundColor:S[0], borderRadius:4, barPercentage:.7}]},
+  options:{indexAxis:'y', maintainAspectRatio:false, scales:{x:{min:0, max:100, ticks:{callback:v => v + ' %'}}, y:{grid:{display:false}}},
+    plugins:{meta:{on:true, axis:'x'}, legend:{display:false}, tooltip:{callbacks:{label:c => ` ${rows[c.dataIndex].cobertura} % · ${fmt(rows[c.dataIndex].dosis_aplicada)} dosis`}}}}});
+hbar(cInst, D.institucion, 'institucion');
+hbar(cGrupo, D.grupo, 'grupo_biologico');
+
+// 6. Mapa de calor (también sirve de vista de tabla)
+const locs = D.loc_infancia.map(r => r.localidad).sort(), insts = [...new Set(D.heat.map(r => r.institucion))].sort();
+const ramp = ['#cde2fb','#9ec5f4','#6da7ec','#3987e5','#256abf','#184f95'];
+const cell = v => { if (v == null) return '<td style="color:var(--muted)">–</td>'; const i = Math.max(0, Math.min(5, Math.floor((v - 20) / 14)));
+  return `<td style="background:${ramp[i]};color:${i > 2 ? '#fff' : '#0b0b0b'};font-weight:${v >= META ? 700 : 400}">${v}</td>`; };
+heat.innerHTML = '<table><tr><th>Localidad</th>' + insts.map(i => `<th>${i}</th>`).join('') + '</tr>' +
+  locs.map(l => '<tr><td>' + l + '</td>' + insts.map(i => cell((D.heat.find(r => r.localidad === l && r.institucion === i) || {}).cobertura)).join('') + '</tr>').join('') + '</table>';
+
+// 7. Log de limpieza
+log.innerHTML = '<table><tr><th>Fuente</th><th style="text-align:left">Paso</th><th>Registros</th></tr>' +
+  Object.entries(D.logs).flatMap(([f, o]) => Object.entries(o).map(([k, v]) => `<tr><td>${f}</td><td style="text-align:left">${k.replaceAll('_', ' ')}</td><td>${fmt(v)}</td></tr>`)).join('') + '</table>';
+</script>
+</body>
+</html>
