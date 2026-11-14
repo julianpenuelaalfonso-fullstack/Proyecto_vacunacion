@@ -16,9 +16,9 @@ Universidad Manuela Beltrán · Inteligencia de Negocios · Docente: Juan José 
 
 | Integrante | GitHub | Aportes |
 |---|---|---|
-| Julián Andrés Peñuela Alfonso | @julianpenuelaalfonso-fullstack | Programa ETL y consumo de la API, dashboard, aplicación de escritorio (.exe), repositorio |
-| Valery Michell Herrera Roca | @Codeforgeettttt | Redacción y reescritura del informe, pruebas del programa, entregas anteriores (guías y póster) |
-| Daniel Felipe Rojas González | @Dani2026403 | Redacción y reescritura del informe, pruebas del programa, entregas anteriores (guías y póster) |
+| Julián Andrés Peñuela Alfonso | [@julianpenuelaalfonso-fullstack](https://github.com/julianpenuelaalfonso-fullstack) | Programa ETL y consumo de la API, dashboard, aplicación de escritorio (.exe), repositorio |
+| Valery Michell Herrera Roca | [@Codeforgeettttt](https://github.com/Codeforgeettttt) | Redacción y reescritura del informe, pruebas del programa, entregas anteriores (guías y póster) |
+| Daniel Felipe Rojas González | [@Dani2026403](https://github.com/Dani2026403) | Redacción y reescritura del informe, pruebas del programa, entregas anteriores (guías y póster) |
 
 El repositorio de las entregas anteriores quedó a cargo de un integrante que se retiró del proyecto; este repositorio
 continúa el trabajo del grupo desde noviembre de 2026. Los commits en los que participó el equipo incluyen a los
